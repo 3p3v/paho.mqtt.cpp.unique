@@ -469,14 +469,14 @@ token_ptr async_client::connect(connect_options opts)
 }
 
 token_ptr async_client::connect(connect_options opts, void* userContext,
-										iaction_listener& cb)
+										std::unique_ptr<iaction_listener>&& cb)
 {
 	// TODO: We really should get this value from the response (when
 	// 		the server confirms the requested version)
 	mqttVersion_ = opts.opts_.MQTTVersion;
 
 	auto tmpTok = connTok_;
-	connTok_ = token::create(token::Type::CONNECT, *this, userContext, cb);
+	connTok_ = token::create(token::Type::CONNECT, *this, userContext, std::move(cb));
 	add_token(connTok_);
 
 	opts.set_token(connTok_);
@@ -538,9 +538,9 @@ token_ptr async_client::disconnect(disconnect_options opts)
 	return tok;
 }
 
-token_ptr async_client::disconnect(int timeout, void* userContext, iaction_listener& cb)
+token_ptr async_client::disconnect(int timeout, void* userContext, std::unique_ptr<iaction_listener>&& cb)
 {
-	auto tok = token::create(token::Type::DISCONNECT, *this, userContext, cb);
+	auto tok = token::create(token::Type::DISCONNECT, *this, userContext, std::move(cb));
 	add_token(tok);
 
 	disconnect_options opts(timeout);
@@ -609,10 +609,10 @@ delivery_token_ptr async_client::publish(string_ref topic, binary_ref payload,
 delivery_token_ptr async_client::publish(string_ref topic,
 										 const void* payload, size_t n,
 										 int qos, bool retained, void* userContext,
-										 iaction_listener& cb)
+										 std::unique_ptr<iaction_listener>&& cb)
 {
 	auto msg = message::create(std::move(topic), payload, n, qos, retained);
-	return publish(std::move(msg), userContext, cb);
+	return publish(std::move(msg), userContext, std::move(cb));
 }
 
 delivery_token_ptr async_client::publish(const_message_ptr msg)
@@ -637,9 +637,9 @@ delivery_token_ptr async_client::publish(const_message_ptr msg)
 }
 
 delivery_token_ptr async_client::publish(const_message_ptr msg,
-										 void* userContext, iaction_listener& cb)
+										 void* userContext, std::unique_ptr<iaction_listener>&& cb)
 {
-	delivery_token_ptr tok = delivery_token::create(*this, msg, userContext, cb);
+	delivery_token_ptr tok = delivery_token::create(*this, msg, userContext, std::move(cb));
 	add_token(tok);
 
 	delivery_response_options rspOpts(tok, mqttVersion_);
@@ -686,12 +686,12 @@ token_ptr async_client::subscribe(const string& topicFilter, int qos,
 }
 
 token_ptr async_client::subscribe(const string& topicFilter, int qos,
-								  void* userContext, iaction_listener& cb,
+								  void* userContext, std::unique_ptr<iaction_listener>&& cb,
 								  const subscribe_options& opts /*=subscribe_options()*/,
 								  const properties& props /*=properties()*/)
 {
 	auto tok = token::create(token::Type::SUBSCRIBE, *this, topicFilter,
-							 userContext, cb);
+							 userContext, std::move(cb));
 	tok->set_num_expected(0);
 	add_token(tok);
 
@@ -745,7 +745,7 @@ token_ptr async_client::subscribe(const_string_collection_ptr topicFilters,
 
 token_ptr async_client::subscribe(const_string_collection_ptr topicFilters,
 								  const qos_collection& qos,
-								  void* userContext, iaction_listener& cb,
+								  void* userContext, std::unique_ptr<iaction_listener>&& cb,
 								  const std::vector<subscribe_options>& opts
 									/*=std::vector<subscribe_options>()*/,
 								  const properties& props /*=properties()*/)
@@ -756,7 +756,7 @@ token_ptr async_client::subscribe(const_string_collection_ptr topicFilters,
 		throw std::invalid_argument("Collection sizes don't match");
 
 	auto tok = token::create(token::Type::SUBSCRIBE, *this,
-							 topicFilters, userContext, cb);
+							 topicFilters, userContext, std::move(cb));
 	tok->set_num_expected(n);
 	add_token(tok);
 
@@ -828,13 +828,13 @@ token_ptr async_client::unsubscribe(const_string_collection_ptr topicFilters,
 }
 
 token_ptr async_client::unsubscribe(const_string_collection_ptr topicFilters,
-									void* userContext, iaction_listener& cb,
+									void* userContext, std::unique_ptr<iaction_listener>&& cb,
 									const properties& props /*=properties()*/)
 {
 	size_t n = topicFilters->size();
 
 	auto tok = token::create(token::Type::UNSUBSCRIBE, *this, topicFilters,
-							 userContext, cb);
+							 userContext, std::move(cb));
 	tok->set_num_expected(n);
 	add_token(tok);
 
@@ -854,11 +854,11 @@ token_ptr async_client::unsubscribe(const_string_collection_ptr topicFilters,
 }
 
 token_ptr async_client::unsubscribe(const string& topicFilter,
-									void* userContext, iaction_listener& cb,
+									void* userContext, std::unique_ptr<iaction_listener>&& cb,
 									const properties& props /*=properties()*/)
 {
 	auto tok = token::create(token::Type::UNSUBSCRIBE , *this, topicFilter,
-							 userContext, cb);
+							 userContext, std::move(cb));
 	add_token(tok);
 
 	auto rspOpts = response_options_builder(mqttVersion_)

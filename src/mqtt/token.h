@@ -101,7 +101,7 @@ private:
 	 * Note that the user listener fires after the action is marked
 	 * complete, but before the token is signaled.
 	 */
-	iaction_listener* listener_;
+	std::unique_ptr<iaction_listener> listener_;
 	/** The number of expected responses */
 	size_t nExpected_;
 	/** Whether the action has yet to complete */
@@ -206,8 +206,8 @@ public:
 	 * @param cb callback listener that will be notified when subscribe has
 	 *  		 completed
 	 */
-	token(Type typ, iasync_client& cli, void* userContext, iaction_listener& cb)
-		: token(typ, cli, const_string_collection_ptr(), userContext, cb) {}
+	token(Type typ, iasync_client& cli, void* userContext, std::unique_ptr<iaction_listener>&& cb)
+		: token(typ, cli, const_string_collection_ptr(), userContext, std::move(cb)) {}
 
 	/**
 	 * Constructs a token object.
@@ -228,8 +228,8 @@ public:
 	 *  		 completed
 	 */
 	token(Type typ, iasync_client& cli, const string& topic,
-		  void* userContext, iaction_listener& cb)
-		: token(typ, cli, string_collection::create(topic), userContext, cb) {}
+		  void* userContext, std::unique_ptr<iaction_listener>&& cb)
+		: token(typ, cli, string_collection::create(topic), userContext, std::move(cb)) {}
 
 	/**
 	 * Constructs a token object.
@@ -249,7 +249,7 @@ public:
 	 *  		 completed
 	 */
 	token(Type typ, iasync_client& cli, const_string_collection_ptr topics,
-		  void* userContext, iaction_listener& cb);
+		  void* userContext, std::unique_ptr<iaction_listener>&& cb);
 	/**
 	 * Constructs a token object.
 	 * @param typ The type of request that the token is tracking.
@@ -280,8 +280,8 @@ public:
 	 *  		 completed
 	 */
 	static ptr_t create(Type typ, iasync_client& cli, void* userContext,
-						iaction_listener& cb) {
-		return std::make_shared<token>(typ, cli, userContext, cb);
+						std::unique_ptr<iaction_listener>&& cb) {
+		return std::make_shared<token>(typ, cli, userContext, std::move(cb));
 	}
 	/**
 	 * Constructs a token object.
@@ -303,8 +303,8 @@ public:
 	 *  		 completed
 	 */
 	static ptr_t create(Type typ, iasync_client& cli, const string& topic,
-						void* userContext, iaction_listener& cb) {
-		return std::make_shared<token>(typ, cli, topic, userContext, cb);
+						void* userContext, std::unique_ptr<iaction_listener>&& cb) {
+		return std::make_shared<token>(typ, cli, topic, userContext, std::move(cb));
 	}
 	/**
 	 * Constructs a token object.
@@ -326,8 +326,8 @@ public:
 	 * @param cb callback listener that will be notified when subscribe has
 	 */
 	static ptr_t create(Type typ, iasync_client& cli, const_string_collection_ptr topics,
-						void* userContext, iaction_listener& cb) {
-		return std::make_shared<token>(typ, cli, topics, userContext, cb);
+						void* userContext, std::unique_ptr<iaction_listener>&& cb) {
+		return std::make_shared<token>(typ, cli, topics, userContext, std::move(cb));
 	}
 	/**
 	 * Gets the type of request the token is tracking, like CONNECT,
@@ -341,7 +341,7 @@ public:
 	 */
 	virtual iaction_listener* get_action_callback() const {
 		guard g(lock_);
-		return listener_;
+		return &(*listener_);
 	}
 	/**
 	 * Returns the MQTT client that is responsible for processing the
@@ -390,9 +390,9 @@ public:
 	 * Register a listener to be notified when an action completes.
 	 * @param listener The callback to be notified when actions complete.
 	 */
-	virtual void set_action_callback(iaction_listener& listener) {
+	virtual void set_action_callback(std::unique_ptr<iaction_listener>&& listener) {
 		guard g(lock_);
-		listener_ = &listener;
+		listener_ = std::move(listener);
 	}
 	/**
 	 * Store some context associated with an action.

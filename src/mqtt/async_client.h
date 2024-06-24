@@ -330,7 +330,7 @@ public:
 	 * @throw security_exception for security related problems
 	 */
 	token_ptr connect(connect_options options, void* userContext,
-					  iaction_listener& cb) override;
+					  std::unique_ptr<iaction_listener>&& cb) override;
 	/**
 	 *
 	 * @param userContext optional object used to pass context to the
@@ -342,8 +342,8 @@ public:
 	 * @throw exception for non security related problems
 	 * @throw security_exception for security related problems
 	 */
-	token_ptr connect(void* userContext, iaction_listener& cb) override {
-		return connect(connect_options{}, userContext, cb);
+	token_ptr connect(void* userContext, std::unique_ptr<iaction_listener>&& cb) override {
+		return connect(connect_options{}, userContext, std::move(cb));
 	}
 	/**
 	 * Reconnects the client using options from the previous connect.
@@ -409,7 +409,7 @@ public:
 	 * @throw exception for problems encountered while disconnecting
 	 */
 	token_ptr disconnect(int timeout, void* userContext,
-						 iaction_listener& cb) override;
+						 std::unique_ptr<iaction_listener>&& cb) override;
 	/**
 	 * Disconnects from the server.
 	 * @param timeout the amount of time in milliseconds to allow for
@@ -426,9 +426,9 @@ public:
 	 */
 	template <class Rep, class Period>
 	token_ptr disconnect(const std::chrono::duration<Rep, Period>& timeout,
-						 void* userContext, iaction_listener& cb) {
+						 void* userContext, std::unique_ptr<iaction_listener>&& cb) {
 		// TODO: check range
-		return disconnect((int) to_milliseconds_count(timeout), userContext, cb);
+		return disconnect((int) to_milliseconds_count(timeout), userContext, std::move(cb));
 	}
 	/**
 	 * Disconnects from the server.
@@ -441,8 +441,8 @@ public:
 	 *  	   a callback is set.
 	 * @throw exception for problems encountered while disconnecting
 	 */
-	token_ptr disconnect(void* userContext, iaction_listener& cb) override {
-		return disconnect(0L, userContext, cb);
+	token_ptr disconnect(void* userContext, std::unique_ptr<iaction_listener>&& cb) override {
+		return disconnect(0L, userContext, std::move(cb));
 	}
 	/**
 	 * Returns the delivery token for the specified message ID.
@@ -537,7 +537,7 @@ public:
 	delivery_token_ptr publish(string_ref topic,
 							   const void* payload, size_t n,
 							   int qos, bool retained,
-							   void* userContext, iaction_listener& cb) override;
+							   void* userContext, std::unique_ptr<iaction_listener>&& cb) override;
 	/**
 	 * Publishes a message to a topic on the server Takes an Message
 	 * message and delivers it to the server at the requested quality of
@@ -559,7 +559,7 @@ public:
 	 *  	   token will be passed to callback methods if set.
 	 */
 	delivery_token_ptr publish(const_message_ptr msg,
-							   void* userContext, iaction_listener& cb) override;
+							   void* userContext, std::unique_ptr<iaction_listener>&& cb) override;
 	/**
 	 * Subscribe to a topic, which may include wildcards.
 	 * @param topicFilter the topic to subscribe to, which can include
@@ -591,7 +591,7 @@ public:
 	 *  	   The token will be passed to callback methods if set.
 	 */
 	token_ptr subscribe(const string& topicFilter, int qos,
-						void* userContext, iaction_listener& cb,
+						void* userContext, std::unique_ptr<iaction_listener>&& cb,
 						const subscribe_options& opts=subscribe_options(),
 						const properties& props=properties()) override;
 	/**
@@ -629,7 +629,7 @@ public:
 	 */
 	token_ptr subscribe(const_string_collection_ptr topicFilters,
 						const qos_collection& qos,
-						void* userContext, iaction_listener& cb,
+						void* userContext, std::unique_ptr<iaction_listener>&& cb,
 						const std::vector<subscribe_options>& opts=std::vector<subscribe_options>(),
 						const properties& props=properties()) override;
 	/**
@@ -665,7 +665,7 @@ public:
 	 *  	   The token will be passed to callback methods if set.
 	 */
 	token_ptr unsubscribe(const_string_collection_ptr topicFilters,
-						  void* userContext, iaction_listener& cb,
+						  void* userContext, std::unique_ptr<iaction_listener>&& cb,
 						  const properties& props=properties()) override;
 	/**
 	 * Requests the server unsubscribe the client from a topics.
@@ -680,7 +680,7 @@ public:
 	 *  	   The token will be passed to callback methods if set.
 	 */
 	token_ptr unsubscribe(const string& topicFilter,
-						  void* userContext, iaction_listener& cb,
+						  void* userContext, std::unique_ptr<iaction_listener>&& cb,
 						  const properties& props=properties()) override;
 	/**
 	 * Start consuming messages.

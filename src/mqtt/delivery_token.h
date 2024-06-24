@@ -83,8 +83,8 @@ public:
 	 *  			   service
 	 */
 	delivery_token(iasync_client& cli, const_message_ptr msg,
-				   void* userContext, iaction_listener& cb)
-			: token(token::Type::PUBLISH, cli, msg->get_topic(), userContext, cb), msg_(std::move(msg)) {}
+				   void* userContext, std::unique_ptr<iaction_listener>&& cb)
+			: token(token::Type::PUBLISH, cli, msg->get_topic(), userContext, std::move(cb)), msg_(std::move(msg)) {}
 	/**
 	 * Creates an empty delivery token connected to a particular client.
 	 * @param cli The asynchronous client object.
@@ -111,8 +111,8 @@ public:
 	 *  			   service
 	 */
 	static ptr_t create(iasync_client& cli, const_message_ptr msg,
-						void* userContext, iaction_listener& cb) {
-		return std::make_shared<delivery_token>(cli, msg, userContext, cb);
+						void* userContext, std::unique_ptr<iaction_listener>&& cb) {
+		return std::make_shared<delivery_token>(cli, msg, userContext, std::move(cb));
 	}
 	/**
 	 * Gets the message associated with this token.

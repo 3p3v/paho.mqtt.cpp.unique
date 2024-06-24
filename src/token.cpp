@@ -37,10 +37,10 @@ token::token(Type typ, iasync_client& cli, const_string_collection_ptr topics)
 }
 
 token::token(Type typ, iasync_client& cli, const_string_collection_ptr topics,
-			 void* userContext, iaction_listener& cb)
+			 void* userContext, std::unique_ptr<iaction_listener>&& cb)
 				: type_(typ), cli_(&cli), rc_(0), reasonCode_(ReasonCode::SUCCESS),
 						msgId_(MQTTAsync_token(0)), topics_(topics),
-						userContext_(userContext), listener_(&cb), nExpected_(0),
+						userContext_(userContext), listener_(std::move(cb)), nExpected_(0),
 						complete_(false)
 {
 }
@@ -90,7 +90,7 @@ void token::on_failure5(void* context, MQTTAsync_failureData5* rsp)
 void token::on_success(MQTTAsync_successData* rsp)
 {
 	unique_lock g(lock_);
-	iaction_listener* listener = listener_;
+	iaction_listener* listener = &(*listener_);
 
 	if (rsp) {
 		msgId_ = rsp->token;
@@ -132,7 +132,7 @@ void token::on_success(MQTTAsync_successData* rsp)
 void token::on_success5(MQTTAsync_successData5* rsp)
 {
 	unique_lock g(lock_);
-	iaction_listener* listener = listener_;
+	iaction_listener* listener = &(*listener_);
 	if (rsp) {
 		msgId_ = rsp->token;
 		reasonCode_ = ReasonCode(rsp->reasonCode);
@@ -173,7 +173,7 @@ void token::on_success5(MQTTAsync_successData5* rsp)
 void token::on_failure(MQTTAsync_failureData* rsp)
 {
 	unique_lock g(lock_);
-	iaction_listener* listener = listener_;
+	iaction_listener* listener = &(*listener_);
 	if (rsp) {
 		msgId_ = rsp->token;
 		rc_ = rsp->code;
@@ -204,7 +204,7 @@ void token::on_failure(MQTTAsync_failureData* rsp)
 void token::on_failure5(MQTTAsync_failureData5* rsp)
 {
 	unique_lock g(lock_);
-	iaction_listener* listener = listener_;
+	iaction_listener* listener = &(*listener_);
 	if (rsp) {
 		msgId_ = rsp->token;
 		reasonCode_ = ReasonCode(rsp->reasonCode);

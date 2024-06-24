@@ -101,7 +101,7 @@ public:
 	 * @throw security_exception for security related problems
 	 */
 	virtual token_ptr connect(connect_options options, void* userContext,
-							  iaction_listener& cb) =0;
+							  std::unique_ptr<iaction_listener>&& cb) =0;
 	/**
 	 *
 	 * @param userContext optional object used to pass context to the
@@ -112,7 +112,7 @@ public:
 	 * @throw exception for non security related problems
 	 * @throw security_exception for security related problems
 	 */
-	virtual token_ptr connect(void* userContext, iaction_listener& cb) =0;
+	virtual token_ptr connect(void* userContext, std::unique_ptr<iaction_listener>&& cb) =0;
 	/**
 	 * Reconnects the client using options from the previous connect.
 	 * The client must have previously called connect() for this to work.
@@ -157,7 +157,7 @@ public:
 	 *  	   The token will be passed to any callback that has been set.
 	 * @throw exception for problems encountered while disconnecting
 	 */
-	virtual token_ptr disconnect(int timeout, void* userContext, iaction_listener& cb) =0;
+	virtual token_ptr disconnect(int timeout, void* userContext, std::unique_ptr<iaction_listener>&& cb) =0;
 	/**
 	 * Disconnects from the server.
 	 * @param userContext optional object used to pass context to the
@@ -168,7 +168,7 @@ public:
 	 *  	   The token will be passed to any callback that has been set.
 	 * @throw exception for problems encountered while disconnecting
 	 */
-	virtual token_ptr disconnect(void* userContext, iaction_listener& cb) =0;
+	virtual token_ptr disconnect(void* userContext, std::unique_ptr<iaction_listener>&& cb) =0;
 	/**
 	 * Returns the delivery token for the specified message ID.
 	 * @return delivery_token
@@ -235,7 +235,7 @@ public:
 	virtual delivery_token_ptr publish(string_ref topic,
 									   const void* payload, size_t n,
 									   int qos, bool retained,
-									   void* userContext, iaction_listener& cb) =0;
+									   void* userContext, std::unique_ptr<iaction_listener>&& cb) =0;
 	/**
 	 * Publishes a message to a topic on the server
 	 * @param topic The topic to deliver the message to
@@ -277,7 +277,7 @@ public:
 	 *  	   token will be passed to callback methods if set.
 	 */
 	virtual delivery_token_ptr publish(const_message_ptr msg,
-									   void* userContext, iaction_listener& cb) =0;
+									   void* userContext, std::unique_ptr<iaction_listener>&& cb) =0;
 	/**
 	 * Sets a callback listener to use for events that happen
 	 * asynchronously.
@@ -325,7 +325,7 @@ public:
 	 *  	   The token will be passed to callback methods if set.
 	 */
 	virtual token_ptr subscribe(const string& topicFilter, int qos,
-								void* userContext, iaction_listener& callback,
+								void* userContext, std::unique_ptr<iaction_listener>&& cb,
 								const subscribe_options& opts=subscribe_options(),
 								const properties& props=properties()) =0;
 	/**
@@ -370,7 +370,7 @@ public:
 	 */
 	virtual token_ptr subscribe(const_string_collection_ptr topicFilters,
 								const qos_collection& qos,
-								void* userContext, iaction_listener& callback,
+								void* userContext, std::unique_ptr<iaction_listener>&& cb,
 								const std::vector<subscribe_options>& opts=std::vector<subscribe_options>(),
 								const properties& props=properties()) =0;
 	/**
@@ -408,7 +408,7 @@ public:
 	 *  	   The token will be passed to callback methods if set.
 	 */
 	virtual token_ptr unsubscribe(const_string_collection_ptr topicFilters,
-								  void* userContext, iaction_listener& cb,
+								  void* userContext, std::unique_ptr<iaction_listener>&& cb,
 								  const properties& props=properties()) =0;
 	/**
 	 * Requests the server unsubscribe the client from a topics.
@@ -423,7 +423,7 @@ public:
 	 *  	   The token will be passed to callback methods if set.
 	 */
 	virtual token_ptr unsubscribe(const string& topicFilter,
-								  void* userContext, iaction_listener& cb,
+								  void* userContext, std::unique_ptr<iaction_listener>&& cb,
 								  const properties& props=properties()) =0;
 };
 
